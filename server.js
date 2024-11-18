@@ -1,93 +1,72 @@
-const express=require('express');
-const app=express();
-const bodyParser=require('body-parser');
-const cors=require('cors');
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config(); // Load environment variables from .env file
+}
+
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
+const cors = require('cors');
 const fileUpload = require("express-fileupload");
 const mongoose = require('mongoose');
 const expressLayouts = require('express-ejs-layouts');
 const useragent = require('express-useragent');
 const sendgridClient = require('@sendgrid/client');
 const handlebars = require('handlebars');
-const sgMail = require('@sendgrid/mail')
+const sgMail = require('@sendgrid/mail');
+const axios = require('axios');
+const OS = require('opensubtitles.com');
+const fs = require('fs');
+const path = require('path');
+const methodOverride = require('method-override');
+const passport = require('passport');
+const flash = require('express-flash');
+const session = require('cookie-session'); // Changed from express-session to cookie-session
 
-
-
-
-let axios=require('axios');
 app.use(expressLayouts);
 
-const OS = require('opensubtitles.com')
-const os = new OS({apikey: 'TY51Na9C9Q61Kmd2hLtPker9Q4M2qztx'})
+const os = new OS({ apikey: 'TY51Na9C9Q61Kmd2hLtPker9Q4M2qztx' });
 
-const fs = require('fs');
-const path=require('path');
-const PORT=4000;
+const PORT = process.env.PORT || 4000; // Ensure the server listens on the PORT environment variable or defaults to 4000
 app.use(cors());
 app.use(bodyParser.urlencoded({
     extended: true,
     limit: "400mb",
-    parameterLimit:500000
+    parameterLimit: 500000
 }));
 app.use(fileUpload());
 
 app.use(bodyParser.urlencoded({
     extended: true
 }));
-app.use(express.json(
-    {
-        limit: "1000mb"
-    }
-));
+app.use(express.json({
+    limit: "1000mb"
+}));
 
 app.use(useragent.express());
-app.use(express.static('public'))
+app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '/views'));
-app.use('/static', express.static(path.join(__dirname, 'public')))
-app.set('layout', './frontend/partials/layout');
-const dotenv = require('dotenv');
-dotenv.config();
+app.use('/static', express.static(path.join(__dirname, 'public')));
 
-let Device=require('./models/Device.model');
-let PlayList=require('./models/PlayList.model');
-let Language=require('./models/Language.model');
-let Word=require('./models/Word.model');
-let LanguageWord=require('./models/LanguageWord.model');
-let Setting=require('./models/Setting.model');
-let Transaction=require('./models/Transaction.model');
-
-
-if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config()
-}
-
-const passport = require('passport')
-const flash = require('express-flash')
-// const session = require('express-session')
-const session = require('cookie-session')
-const methodOverride = require('method-override');
-
-app.use(flash())
+app.use(flash());
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false
 }));
-app.use(passport.initialize())
-app.use(passport.session())
-app.use(methodOverride('_method'))
-if(process.env.NODE_ENV==='develop')
-    mongoose.connect('mongodb://127.0.0.1:27017/Flix', { useNewUrlParser: true,useUnifiedTopology: true});
-else
-    mongoose.connect('mongodb+srv://flixapp:Bita**2016%23@cluster0.pxiwd.mongodb.net/FlixIPTV?retryWrites=true&w=majority', { useNewUrlParser: true,useUnifiedTopology: true});
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(methodOverride('_method'));
+
+const mongoUri = process.env.NODE_ENV === 'develop' ? process.env.MONGODB_URI : 'mongodb+srv://flixapp:Muhammed5858@flixapp.aexhj.mongodb.net/?retryWrites=true&w=majority&appName=flixapp';
+mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true });
+
 const connection = mongoose.connection;
-connection.once('open',
-    async function() {
-        console.log("MongoDB database connection established successfully");
-        getSettings();
-        await removePendingTransactions();
-    }
-)
+connection.once('open', async function () {
+    console.log("MongoDB database connection established successfully");
+    getSettings();
+    await removePendingTransactions();
+});
 
 connection.on('connected', () => {
     console.log('Connected to MongoDB');
@@ -95,11 +74,12 @@ connection.on('connected', () => {
 connection.on('error', (err) => {
     console.error('Failed to connect to MongoDB', err);
 });
-app.listen(PORT,function () {
-    console.log('Server is running on Port: '+PORT);
-})
 
-global.settings={
+app.listen(PORT, function () {
+    console.log('Server is running on Port: ' + PORT);
+});
+
+global.settings = {
     stripe_secret_key: '',
     news_meta_keyword: 'news, iptv news, news iptv apk, player iptv news, flixiptv news, iptv news reddit, news about iptv, iptv box news, iptv breaking news, about flix iptv, flixiptv information, iptv apk, iptv angebote, iptv aufnehmen, iptv e legal',
     instruction_meta_keyword: ' Introduction flix iptv, flix iptv introduction, iptv droid, iptv legal, flixiptv, flixIPTV, iptv introduction, iptv solution introduction, introduction to iptv, TV movies, flix reviews, flix  cinema, flix IPTV PLAYER apk, iptv community, iptv download tv,iptv editor, iptv app android tv,\tiptv app apk, iptv app google play,iptv app apple tv 4k, iptv app android phone, iptv app android apk, iptv apple tv reddit ',
@@ -138,10 +118,6 @@ global.settings={
         {
             "name": "Purple",
             "url": "/public/upload/1633151823.png"
-        },
-        {
-            "name": "Purple blue",
-            "url": "/public/upload/1633151823.jpg"
         },
         {
             "name": "Lila",
