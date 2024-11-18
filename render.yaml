@@ -10,7 +10,5 @@ services:
         value: production
       - key: MONGODB_URI
         value: mongodb+srv://flixapp:Muhammed5858@flixapp.aexhj.mongodb.net/?retryWrites=true&w=majority&appName=flixapp
-- key: SESSION_SECRET
+      - key: SESSION_SECRET
         value: test_scetre_2024
-
-

@@ -51,6 +51,7 @@ app.use('/static', express.static(path.join(__dirname, 'public')));
 app.use(flash());
 app.use(session({
     secret: process.env.SESSION_SECRET,
+    keys: [process.env.SESSION_SECRET], // Add this line to provide keys for cookie-session
     resave: false,
     saveUninitialized: false
 }));
